@@ -10,45 +10,86 @@
           <Link href="/admin/medicines/index" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded">Back</Link>
         </div>
 
+        <!-- Enhanced notification for existing medicine -->
+        <div v-if="isExisting" class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 mx-4">
+          <p class="font-semibold">This medicine already exists in the inventory:</p>
+          <ul class="list-disc list-inside ml-4 mt-2">
+            <li>Current total stock: {{ totalExistingQuantity }} units</li>
+            <li>Adding {{ form.quantity || 0 }} more units</li>
+            <li>New total will be: {{ (parseInt(form.quantity) || 0) + parseInt(totalExistingQuantity) }} units</li>
+            <li>Current expiration date: {{ formatDate(currentExpDate) }}</li>
+            <li class="font-semibold">Expiration date will be updated to: {{ formatDate(form.expdate) }}</li>
+          </ul>
+        </div>
+
         <div class="flex justify-center">
-          <!-- Card Container -->
           <div class="bg-white shadow-lg rounded-lg p-6 max-w-md w-full">
-            <h3 class="text-lg font-semibold mb-4">Add New Medicine</h3>
             <form @submit.prevent="storeMedicine">
               <div class="relative z-0 w-full mb-5 group">
-                <input v-model="form.name" type="text" name="name" id="name" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                <input v-model="form.name" type="text" name="name" id="name" 
+                  class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" 
+                  placeholder=" " 
+                  required 
+                />
                 <label for="name" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Name</label>
               </div>
-              <!-- Commented out Price Input -->
-              <!--<div class="relative z-0 w-full mb-5 group">
-                <input v-model="form.price" type="text" name="price" id="price" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                <label for="price" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Price</label>
-              </div>-->
+
+              <!-- Price fields -->
               <div class="grid md:grid-cols-3 md:gap-3">
                 <div class="relative z-0 w-full mb-1 group">
-                  <input v-model="form.lprice" type="text" name="lprice" id="lprice" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                  <input v-model="form.lprice" type="number" name="lprice" id="lprice" 
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" 
+                    placeholder=" " 
+                    required 
+                    :readonly="isExisting"
+                  />
                   <label for="lprice" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Lowest Price</label>
                 </div>
                 <div class="relative z-0 w-full mb-1 group">
-                  <input v-model="form.mprice" type="text" name="mprice" id="mprice" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                  <input v-model="form.mprice" type="number" name="mprice" id="mprice" 
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" 
+                    placeholder=" " 
+                    required 
+                    :readonly="isExisting"
+                  />
                   <label for="mprice" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Median Price</label>
                 </div>
                 <div class="relative z-0 w-full mb-5 group">
-                  <input v-model="form.hprice" type="text" name="hprice" id="hprice" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                  <input v-model="form.hprice" type="number" name="hprice" id="hprice" 
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" 
+                    placeholder=" " 
+                    required 
+                    :readonly="isExisting"
+                  />
                   <label for="hprice" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Highest Price</label>
                 </div>
               </div>
+
+              <!-- Other fields -->
               <div class="grid md:grid-cols-3 md:gap-6">
                 <div class="relative z-0 w-full mb-5 group">
-                  <input v-model="form.quantity" type="text" name="quantity" id="quantity" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                  <input v-model="form.quantity" type="number" name="quantity" id="quantity" 
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" 
+                    placeholder=" " 
+                    required 
+                  />
                   <label for="quantity" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Quantity</label>
                 </div>
                 <div class="relative z-0 w-full mb-5 group">
-                  <input v-model="form.dosage" type="text" name="dosage" id="dosage" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                  <input v-model="form.dosage" type="text" name="dosage" id="dosage" 
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" 
+                    placeholder=" " 
+                    required 
+                    :readonly="isExisting"
+                  />
                   <label for="dosage" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Dosage</label>
                 </div>
                 <div class="relative z-0 w-full mb-5 group">
-                  <input v-model="form.expdate" type="date" name="expdate" id="expdate" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                  <input v-model="form.expdate" type="date" name="expdate" id="expdate" 
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" 
+                    placeholder=" " 
+                    required 
+                  />
                   <label for="expdate" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Expiration Date</label>
                 </div>
               </div>
@@ -56,7 +97,6 @@
               <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Add</button>
             </form>
           </div>
-          <!-- End of Card Container -->
         </div>
       </div>
     </div>
@@ -67,20 +107,62 @@
 import AuthenticatedLayout from '@/Layouts/AdminAuthenticatedLayout.vue';
 import { Link } from '@inertiajs/vue3';
 import { useForm } from '@inertiajs/vue3';
+import axios from 'axios';
+import { ref, watch } from 'vue';
 
 const form = useForm({
   name: null,
-  //price: null,
   lprice: null,
   mprice: null,
   hprice: null,
   quantity: null,
   dosage: null,
   expdate: null,
+  existing_id: null,
+});
+
+const isExisting = ref(false);
+const totalExistingQuantity = ref(0);
+const currentExpDate = ref(null);
+
+// Update the watch function
+watch(() => form.name, async (newValue) => {
+  if (newValue && newValue.length > 2) {
+    try {
+      const response = await axios.get(`/api/medicines/check/${newValue}`);
+      if (response.data.exists) {
+        isExisting.value = true;
+        const medicine = response.data.medicine;
+        totalExistingQuantity.value = medicine.total_quantity;
+        currentExpDate.value = medicine.latest_expdate;
+        
+        // Auto-fill existing medicine details
+        form.lprice = medicine.lprice;
+        form.mprice = medicine.mprice;
+        form.hprice = medicine.hprice;
+        form.dosage = medicine.dosage;
+        form.existing_id = medicine.existing_id;
+      } else {
+        isExisting.value = false;
+        totalExistingQuantity.value = 0;
+        currentExpDate.value = null;
+        form.existing_id = null;
+      }
+    } catch (error) {
+      console.error('Error checking medicine:', error);
+    }
+  }
 });
 
 function storeMedicine() {
-  form.post('/admin/medicines/');
+  form.post('/admin/medicines/', {
+    onSuccess: () => {
+      form.reset();
+      isExisting.value = false;
+      totalExistingQuantity.value = 0;
+      currentExpDate.value = null;
+    }
+  });
 }
 </script>
   

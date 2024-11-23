@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\Medicine;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
+use App\Models\MedicineHistory;
 
 class MedicineController extends Controller
 {
@@ -58,17 +59,60 @@ class MedicineController extends Controller
      */
     public function store(Request $request)
     {
-        Medicine::create([
-            'name' => $request->name,
-            'lprice' => $request->lprice,
-            'mprice' => $request->mprice,
-            'hprice' => $request->hprice,
-            'quantity' => $request->quantity,
-            'dosage' => $request->dosage,
-            'expdate' => $request->expdate,
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'lprice' => 'required|numeric',
+            'mprice' => 'required|numeric',
+            'hprice' => 'required|numeric',
+            'quantity' => 'required|numeric',
+            'dosage' => 'required|string',
+            'expdate' => 'required|date',
         ]);
 
-        return redirect()->route('admin.medicines.index');
+        $existingMedicine = Medicine::where('name', $validated['name'])->first();
+
+        if ($existingMedicine) {
+            $newQuantity = $existingMedicine->quantity + $validated['quantity'];
+            
+            $existingMedicine->update([
+                'quantity' => $newQuantity,
+                'expdate' => $validated['expdate'],
+            ]);
+
+            MedicineHistory::create([
+                'medicine_id' => $existingMedicine->id,
+                'name' => $existingMedicine->name,
+                'lprice' => $existingMedicine->lprice,
+                'mprice' => $existingMedicine->mprice,
+                'hprice' => $existingMedicine->hprice,
+                'quantity_added' => $validated['quantity'],
+                'total_quantity' => $newQuantity,
+                'dosage' => $existingMedicine->dosage,
+                'expdate' => $validated['expdate'],
+                'action_type' => 'update'
+            ]);
+
+            return redirect()->route('admin.medicines.index')
+                ->with('success', 'Medicine quantity updated and expiration date changed successfully');
+        }
+
+        $medicine = Medicine::create($validated);
+
+        MedicineHistory::create([
+            'medicine_id' => $medicine->id,
+            'name' => $medicine->name,
+            'lprice' => $medicine->lprice,
+            'mprice' => $medicine->mprice,
+            'hprice' => $medicine->hprice,
+            'quantity_added' => $medicine->quantity,
+            'total_quantity' => $medicine->quantity,
+            'dosage' => $medicine->dosage,
+            'expdate' => $medicine->expdate,
+            'action_type' => 'add'
+        ]);
+
+        return redirect()->route('admin.medicines.index')
+            ->with('success', 'New medicine added successfully');
     }
 
     /**
@@ -116,5 +160,34 @@ class MedicineController extends Controller
     {
         $medicine->delete();
         return Redirect::route('admin.medicines.index')->with('success', 'Medicine has been deleted.');
+    }
+
+    public function history(Request $request)
+    {
+        try {
+            $query = MedicineHistory::query()
+                ->orderBy('created_at', 'desc');
+
+            // Apply date filters if present
+            if ($request->start_date && $request->end_date) {
+                $query->whereBetween('created_at', [
+                    $request->start_date . ' 00:00:00',
+                    $request->end_date . ' 23:59:59'
+                ]);
+            }
+
+            $histories = $query->paginate(10);
+
+            return Inertia::render('Admin/Medicines/History', [
+                'histories' => $histories,
+                'filters' => $request->only(['start_date', 'end_date'])
+            ]);
+        } catch (\Exception $e) {
+            return Inertia::render('Admin/Medicines/History', [
+                'histories' => [],
+                'filters' => $request->only(['start_date', 'end_date']),
+                'error' => 'Failed to load history records'
+            ]);
+        }
     }
 }

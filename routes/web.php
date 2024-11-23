@@ -202,3 +202,9 @@ Route::get('/test-mail/{user_id}', function ($user_id) {
         return 'Error: ' . $e->getMessage();
     }
 });
+
+Route::middleware(['auth:admin'])->group(function () {
+    // ... other routes ...
+    Route::get('/admin/medicines/history', [MedicineController::class, 'history'])
+        ->name('admin.medicines.history');
+});

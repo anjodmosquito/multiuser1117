@@ -25,17 +25,40 @@
                         </div>
                     </div>
                     <!-- Add Medicines Button -->
-                    <Link :href="route('admin.medicines.create')"
-                        class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded">
-                    Add Medicines
-                    </Link>
+                    <div class="flex space-x-2">
+                        <Link :href="route('admin.medicines.create')"
+                            class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded">
+                            Add Medicines
+                        </Link>
+                        <Link :href="route('admin.medicines.history')"
+                            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded flex items-center">
+                            <span class="mr-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </span>
+                            History
+                        </Link>
+                        <button 
+                            @click="generateDetailedReport"
+                            class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded flex items-center"
+                        >
+                            <span class="mr-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </span>
+                            Download Report
+                        </button>
+                    </div>
                 </div>
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
                         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                            <thead
-                                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                 <tr>
                                     <th scope="col" class="px-6 py-3">Name</th>
                                     <th scope="col" class="px-6 py-3">Low Price</th>
@@ -50,34 +73,34 @@
                             </thead>
                             <tbody>
                                 <tr v-if="!medicines || medicines.length === 0">
-                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                                        No medicines found
-                                    </td>
+                                    <td colspan="9" class="px-6 py-4 text-center">No medicines found</td>
                                 </tr>
-                                <tr v-for="(medicine, index) in medicines" :key="medicine?.id || index"
+                                <tr v-else v-for="medicine in medicines" :key="medicine.id"
                                     class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                    <th scope="row"
-                                        class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                        {{ medicine?.name || 'N/A' }}
-                                    </th>
-                                    <td class="px-6 py-4">₱{{ medicine?.lprice || '0' }}</td>
-                                    <td class="px-6 py-4">₱{{ medicine?.mprice || '0' }}</td>
-                                    <td class="px-6 py-4">₱{{ medicine?.hprice || '0' }}</td>
-                                    <td class="px-6 py-4">{{ medicine?.quantity || '0' }}</td>
-                                    <td class="px-6 py-4">{{ medicine?.dosage || 'N/A' }}</td>
-                                    <td class="px-6 py-4">{{ medicine?.expdate || 'N/A' }}</td>
+                                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                        {{ medicine.name }}
+                                    </td>
+                                    <td class="px-6 py-4">₱{{ medicine.lprice }}</td>
+                                    <td class="px-6 py-4">₱{{ medicine.mprice }}</td>
+                                    <td class="px-6 py-4">₱{{ medicine.hprice }}</td>
+                                    <td class="px-6 py-4">{{ medicine.quantity }}</td>
+                                    <td class="px-6 py-4">{{ medicine.dosage }}</td>
+                                    <td class="px-6 py-4">
+                                        <span :class="{'text-red-600': isExpired(medicine.expdate)}">
+                                            {{ formatDate(medicine.expdate) }}
+                                        </span>
+                                    </td>
                                     <td class="px-6 py-4">
                                         <span :class="medicine.status === 'disabled' ? 'text-red-600' : 'text-green-600'">
                                             {{ medicine.status }}
                                         </span>
                                     </td>
-                                    <td class="flex px-6 py-4 space-x-2">
-                                        <!-- Conditionally render Edit button if status is not 'disabled' -->
-                                        <Link v-if="medicine.status !== 'disabled'" :href="route('admin.medicines.edit', medicine.id)"
+                                    <td class="px-6 py-4 space-x-2">
+                                        <Link v-if="medicine.status !== 'disabled'"
+                                            :href="route('admin.medicines.edit', medicine.id)"
                                             class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded">
                                             Edit
                                         </Link>
-                                        <!-- Always show the Delete button -->
                                         <button @click="confirmDelete(medicine.id)"
                                             class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
                                             Delete
@@ -95,12 +118,14 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AdminAuthenticatedLayout.vue';
-import { Head } from '@inertiajs/vue3';
-import { Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
-import Swal from 'sweetalert2'; // Import SweetAlert2
+import Swal from 'sweetalert2';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { format } from 'date-fns';
 
 const props = defineProps({
     medicines: {
@@ -109,10 +134,19 @@ const props = defineProps({
     }
 });
 
+const searchQuery = ref('');
+
+function formatDate(date) {
+    return format(new Date(date), 'yyyy-MM-dd');
+}
+
+function isExpired(date) {
+    return new Date(date) < new Date();
+}
+
 function confirmDelete(medicineId) {
     if (!medicineId) return;
 
-    // Use SweetAlert for confirmation
     Swal.fire({
         title: 'Are you sure?',
         text: 'You will not be able to recover this medicine!',
@@ -124,18 +158,11 @@ function confirmDelete(medicineId) {
         cancelButtonText: 'No, cancel!',
     }).then((result) => {
         if (result.isConfirmed) {
-            // Redirect to delete route or handle delete here
-            router.delete(route('admin.medicines.destroy', medicineId)); // Perform delete action via router
-        } else {
-            // Navigate to the medicines index route instead of using history.back()
-            router.get(route('admin.medicines.index')); // Go back to the medicines index page
+            router.delete(route('admin.medicines.destroy', medicineId));
         }
     });
 }
 
-const searchQuery = ref('');
-
-// Debounced search function
 const performSearch = debounce((query) => {
     router.get(route('admin.medicines.index'),
         { search: query },
@@ -143,8 +170,53 @@ const performSearch = debounce((query) => {
     );
 }, 300);
 
-// Watch for search input changes
 watch(searchQuery, (newValue) => {
     performSearch(newValue);
 });
+
+function generateDetailedReport() {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.text('Medicine Inventory Report', 14, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Generated on: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`, 14, 30);
+    
+    const tableColumn = [
+        "Name",
+        "Dosage",
+        "Quantity",
+        "Prices (L/M/H)",
+        "Exp Date",
+        "Status"
+    ];
+    
+    const tableRows = props.medicines.map(medicine => [
+        medicine.name,
+        medicine.dosage,
+        medicine.quantity,
+        `₱${medicine.lprice}/${medicine.mprice}/${medicine.hprice}`,
+        formatDate(medicine.expdate),
+        medicine.status
+    ]);
+
+    doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 40,
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [41, 128, 185] },
+        didDrawPage: function(data) {
+            doc.setFontSize(10);
+            doc.text(
+                `Total Medicines: ${props.medicines.length}`,
+                14,
+                doc.internal.pageSize.height - 10
+            );
+        }
+    });
+
+    doc.save(`medicine-inventory-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+}
 </script>
