@@ -125,7 +125,7 @@ const isExisting = ref(false);
 const totalExistingQuantity = ref(0);
 const currentExpDate = ref(null);
 
-// Update the watch function
+// Enhanced watch function for medicine name
 watch(() => form.name, async (newValue) => {
   if (newValue && newValue.length > 2) {
     try {
@@ -133,26 +133,64 @@ watch(() => form.name, async (newValue) => {
       if (response.data.exists) {
         isExisting.value = true;
         const medicine = response.data.medicine;
-        totalExistingQuantity.value = medicine.total_quantity;
-        currentExpDate.value = medicine.latest_expdate;
+        totalExistingQuantity.value = medicine.quantity;
+        currentExpDate.value = medicine.expdate;
         
-        // Auto-fill existing medicine details
+        // Auto-fill all existing medicine details
         form.lprice = medicine.lprice;
         form.mprice = medicine.mprice;
         form.hprice = medicine.hprice;
         form.dosage = medicine.dosage;
-        form.existing_id = medicine.existing_id;
+        form.existing_id = medicine.id;
+
+        // Make price and dosage fields readonly
+        document.getElementById('lprice').readOnly = true;
+        document.getElementById('mprice').readOnly = true;
+        document.getElementById('hprice').readOnly = true;
+        document.getElementById('dosage').readOnly = true;
       } else {
+        // Reset form and make fields editable if medicine doesn't exist
         isExisting.value = false;
         totalExistingQuantity.value = 0;
         currentExpDate.value = null;
         form.existing_id = null;
+        form.lprice = null;
+        form.mprice = null;
+        form.hprice = null;
+        form.dosage = null;
+
+        // Make fields editable again
+        document.getElementById('lprice').readOnly = false;
+        document.getElementById('mprice').readOnly = false;
+        document.getElementById('hprice').readOnly = false;
+        document.getElementById('dosage').readOnly = false;
       }
     } catch (error) {
       console.error('Error checking medicine:', error);
     }
+  } else {
+    // Reset everything if name is too short
+    isExisting.value = false;
+    totalExistingQuantity.value = 0;
+    currentExpDate.value = null;
+    form.existing_id = null;
+    form.lprice = null;
+    form.mprice = null;
+    form.hprice = null;
+    form.dosage = null;
+
+    // Make fields editable
+    document.getElementById('lprice').readOnly = false;
+    document.getElementById('mprice').readOnly = false;
+    document.getElementById('hprice').readOnly = false;
+    document.getElementById('dosage').readOnly = false;
   }
 });
+
+function formatDate(date) {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString();
+}
 
 function storeMedicine() {
   form.post('/admin/medicines/', {
